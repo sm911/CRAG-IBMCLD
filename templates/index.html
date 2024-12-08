@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corrective RAG (CRAG) Prototype</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+        }
+        #results {
+            margin-top: 2em;
+        }
+        .result {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 1em;
+            margin-bottom: 1em;
+            background-color: #f9f9f9;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .result h4 {
+            margin: 0;
+            color: #333;
+        }
+        .result p {
+            margin: 0.5em 0;
+        }
+        .error {
+            color: red;
+        }
+        input[type="text"], select {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 10px 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Corrective RAG (CRAG) Prototype</h1>
+    <form id="query-form">
+        <input type="text" id="query" placeholder="Enter your query" required>
+        <select id="filter-options">
+            <option value="all">All Results</option>
+            <option value="high-confidence">High Confidence (>= 90%)</option>
+            <option value="low-confidence">Low Confidence (< 90%)</option>
+        </select>
+        <button type="submit">Search</button>
+    </form>
+    <div id="results">
+        <h2>Results</h2>
+        <div id="results-container"></div>
+        <div class="pagination" id="pagination-container"></div>
+    </div>
+    <script>
+        const RESULTS_PER_PAGE = 2;
+
+        let results = [];
+        let currentPage = 1;
+
+        document.getElementById('query-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const query = document.getElementById('query').value;
+            const filter = document.getElementById('filter-options').value;
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+
+                results = applyFilter(data.results, filter);
+                currentPage = 1;
+                displayResults();
+            } catch (error) {
+                document.getElementById('results-container').innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+            }
+        });
+
+        function applyFilter(results, filter) {
+            if (filter === 'high-confidence') {
+                return results.filter(result => parseFloat(result.confidence) >= 90);
+            } else if (filter === 'low-confidence') {
+                return results.filter(result => parseFloat(result.confidence) < 90);
+            }
+            return results;
+        }
+
+        function displayResults() {
+            const resultsContainer = document.getElementById('results-container');
+            const paginationContainer = document.getElementById('pagination-container');
+
+            resultsContainer.innerHTML = '';
+            paginationContainer.innerHTML = '';
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+
+            const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
+            const endIndex = Math.min(startIndex + RESULTS_PER_PAGE, results.length);
+
+            for (let i = startIndex; i < endIndex; i++) {
+                const result = results[i];
+                const div = document.createElement('div');
+                div.classList.add('result');
+                div.innerHTML = `
+                    <h4>${result.title}</h4>
+                    <p><strong>Author:</strong> ${result.author}</p>
+                    <p><strong>Document ID:</strong> ${result.document_id}</p>
+                    <p><strong>Confidence:</strong> ${result.confidence}</p>
+                    <p><strong>Matching Passages:</strong></p>
+                    <ul>
+                        ${result.scores.map(score => `
+                            <li>
+                                <strong>Passage:</strong> ${score.passage}<br>
+                                <strong>Relevance Score:</strong> ${score.relevance_score.toFixed(2)}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                resultsContainer.appendChild(div);
+            }
+
+            const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.disabled = i === currentPage;
+                button.addEventListener('click', () => {
+                    currentPage = i;
+                    displayResults();
+                });
+                paginationContainer.appendChild(button);
+            }
+        }
+    </script>
+</body>
+</html>
