@@ -7,46 +7,118 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 2em;
-        }
-        #results {
-            margin-top: 2em;
-        }
-        .result {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            padding: 1em;
-            margin-bottom: 1em;
-            background-color: #f9f9f9;
-            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        .result h4 {
+            background-color: #f4f4f9;
             margin: 0;
-            color: #333;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        .result p {
-            margin: 0.5em 0;
+
+        h1 {
+            text-align: center;
+            color: #34495e;
+            margin: 20px 0;
+            font-size: 2em;
         }
-        .error {
-            color: red;
-        }
-        input[type="text"], select {
-            width: 80%;
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-        .pagination {
+
+        #query-form {
             display: flex;
             justify-content: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+        }
+
+        #query {
+            flex: 1;
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #34495e;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .filter-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .filter-section select {
+            padding: 10px;
+            font-size: 1rem;
+            border: 2px solid #34495e;
+            border-radius: 5px;
+        }
+
+        #results {
+            width: 100%;
+            max-width: 800px;
+        }
+
+        .result {
+            border: 2px solid #34495e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #ffffff;
+            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .result h4 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.5em;
+        }
+
+        .result p {
+            margin: 0.5em 0;
+            font-size: 1rem;
+        }
+
+        .error {
+            color: red;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .pagination {
+            text-align: center;
             margin-top: 20px;
         }
+
         .pagination button {
-            margin: 0 5px;
-            padding: 10px 15px;
+            padding: 8px 12px;
+            margin: 5px;
+            font-size: 0.9rem;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .pagination button:hover {
+            background-color: #2980b9;
+        }
+
+        .pagination button:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
         }
     </style>
 </head>
@@ -54,59 +126,28 @@
     <h1>Corrective RAG (CRAG) Prototype</h1>
     <form id="query-form">
         <input type="text" id="query" placeholder="Enter your query" required>
-        <select id="filter-options">
-            <option value="all">All Results</option>
-            <option value="high-confidence">High Confidence (>= 90%)</option>
-            <option value="low-confidence">Low Confidence (< 90%)</option>
-        </select>
         <button type="submit">Search</button>
     </form>
+    <div class="filter-section">
+        <label for="filter">Filter Results:</label>
+        <select id="filter">
+            <option value="all">All Results</option>
+            <option value="high-confidence">High Confidence (> 90%)</option>
+        </select>
+    </div>
     <div id="results">
-        <h2>Results</h2>
+        <h2 style="font-size: 1.5em; color: #2c3e50;">Results</h2>
         <div id="results-container"></div>
-        <div class="pagination" id="pagination-container"></div>
+        <div class="pagination" id="pagination"></div>
     </div>
     <script>
-        const RESULTS_PER_PAGE = 2;
-
-        let results = [];
+        const resultsPerPage = 2;
         let currentPage = 1;
+        let filteredResults = [];
 
-        document.getElementById('query-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const query = document.getElementById('query').value;
-            const filter = document.getElementById('filter-options').value;
-
-            try {
-                const response = await fetch('/query', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query })
-                });
-
-                const data = await response.json();
-
-                results = applyFilter(data.results, filter);
-                currentPage = 1;
-                displayResults();
-            } catch (error) {
-                document.getElementById('results-container').innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
-            }
-        });
-
-        function applyFilter(results, filter) {
-            if (filter === 'high-confidence') {
-                return results.filter(result => parseFloat(result.confidence) >= 90);
-            } else if (filter === 'low-confidence') {
-                return results.filter(result => parseFloat(result.confidence) < 90);
-            }
-            return results;
-        }
-
-        function displayResults() {
+        function displayResults(results) {
             const resultsContainer = document.getElementById('results-container');
-            const paginationContainer = document.getElementById('pagination-container');
-
+            const paginationContainer = document.getElementById('pagination');
             resultsContainer.innerHTML = '';
             paginationContainer.innerHTML = '';
 
@@ -115,11 +156,11 @@
                 return;
             }
 
-            const startIndex = (currentPage - 1) * RESULTS_PER_PAGE;
-            const endIndex = Math.min(startIndex + RESULTS_PER_PAGE, results.length);
+            const startIndex = (currentPage - 1) * resultsPerPage;
+            const endIndex = startIndex + resultsPerPage;
+            const pageResults = results.slice(startIndex, endIndex);
 
-            for (let i = startIndex; i < endIndex; i++) {
-                const result = results[i];
+            pageResults.forEach(result => {
                 const div = document.createElement('div');
                 div.classList.add('result');
                 div.innerHTML = `
@@ -138,20 +179,55 @@
                     </ul>
                 `;
                 resultsContainer.appendChild(div);
-            }
+            });
 
-            const totalPages = Math.ceil(results.length / RESULTS_PER_PAGE);
+            const totalPages = Math.ceil(results.length / resultsPerPage);
             for (let i = 1; i <= totalPages; i++) {
                 const button = document.createElement('button');
                 button.textContent = i;
-                button.disabled = i === currentPage;
+                if (i === currentPage) button.disabled = true;
                 button.addEventListener('click', () => {
                     currentPage = i;
-                    displayResults();
+                    displayResults(filteredResults);
                 });
                 paginationContainer.appendChild(button);
             }
         }
+
+        document.getElementById('query-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const query = document.getElementById('query').value;
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+
+                const data = await response.json();
+                filteredResults = data.results;
+                currentPage = 1;
+                displayResults(filteredResults);
+            } catch (error) {
+                document.getElementById('results-container').innerHTML = `<p class="error">An error occurred: ${error.message}</p>`;
+            }
+        });
+
+        document.getElementById('filter').addEventListener('change', function() {
+            const filterValue = this.value;
+
+            if (filterValue === 'high-confidence') {
+                filteredResults = filteredResults.filter(result => {
+                    const confidenceValue = parseFloat(result.confidence.replace('%', ''));
+                    return confidenceValue > 90;
+                });
+            } else {
+                filteredResults = filteredResults;
+            }
+            currentPage = 1;
+            displayResults(filteredResults);
+        });
     </script>
 </body>
 </html>
