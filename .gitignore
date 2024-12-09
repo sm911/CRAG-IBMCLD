@@ -1,5 +1,5 @@
-# created by virtualenv automatically
-*# Byte-compiled files
+# Automatically created by virtualenv
+# Byte-compiled files
 *.pyc
 __pycache__/
 
@@ -12,7 +12,8 @@ venv/
 *.log
 
 # Environment variables
-.env
+# Ignore all .env files
+*.env
 
 # IDE settings
 .idea/
@@ -21,4 +22,3 @@ venv/
 # OS-generated files
 .DS_Store
 Thumbs.db
-
