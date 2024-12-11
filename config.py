@@ -32,4 +32,4 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
 # Service versions
 DISCOVERY_VERSION = '2021-08-01'
 NLU_VERSION = '2021-08-01'
-git branch
+
