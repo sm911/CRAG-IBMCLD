@@ -1,323 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Corrective RAG (CRAG) Prototype</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        h1 {
-            text-align: center;
-            color: #34495e;
-            margin: 20px 0;
-            font-size: 2em;
-        }
-
-        form {
-            width: 100%;
-            max-width: 800px;
-            margin-bottom: 20px;
-        }
-
-        #query-form {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-        }
-
-        #query {
-            flex: 1 1 100%;
-            padding: 10px;
-            font-size: 1rem;
-            border: 2px solid #34495e;
-            border-radius: 5px;
-        }
-
-        input[type="number"],
-        input[type="date"],
-        select,
-        button {
-            padding: 10px;
-            font-size: 1rem;
-            border: 2px solid #34495e;
-            border-radius: 5px;
-        }
-
-        button {
-            background-color: #3498db;
-            color: white;
-            cursor: pointer;
-        }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
-        button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        .filter-section {
-            text-align: center;
-        }
-
-        #results {
-            width: 100%;
-            max-width: 800px;
-            margin-top: 20px;
-        }
-
-        .result {
-            border: 2px solid #34495e;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            background-color: #ffffff;
-            box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .result h4 {
-            margin: 0;
-            color: #2c3e50;
-            font-size: 1.5em;
-        }
-
-        .result p {
-            margin: 0.5em 0;
-            font-size: 1rem;
-        }
-
-        .error {
-            color: red;
-            text-align: center;
-            font-size: 1.2em;
-        }
-
-        .pagination {
-            text-align: center;
-            margin-top: 20px;
-        }
-
-        .pagination button {
-            padding: 8px 12px;
-            margin: 5px;
-            font-size: 0.9rem;
-            background-color: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .pagination button:hover {
-            background-color: #2980b9;
-        }
-
-        .pagination button:disabled {
-            background-color: #bdc3c7;
-            cursor: not-allowed;
-        }
-
-        .upload-section {
-            text-align: center;
-            margin: 20px 0;
-            padding: 10px;
-            background-color: #eef2f7;
-            border: 1px solid #d1d5db;
-            border-radius: 5px;
-            width: 100%;
-            max-width: 800px;
-        }
-
-        .upload-section h3 {
-            color: #34495e;
-        }
-
-        .upload-section input {
-            margin-right: 10px;
-            padding: 8px;
-            border: 2px solid #34495e;
-            border-radius: 5px;
-        }
-
-        .upload-section button {
-            padding: 8px 15px;
-            font-size: 1rem;
-            background-color: #27ae60;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .upload-section button:hover {
-            background-color: #1e8449;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Corrective RAG (CRAG) Prototype</h1>
-
-    <!-- Query Form -->
-    <form id="query-form">
-        <input type="text" id="query" placeholder="Enter your query" required>
+    <form id="query-form" aria-label="Query Form">
+        <input type="text" id="query" placeholder="Enter your query" required aria-required="true" aria-label="Query Input">
         <div>
-            <label>Min Confidence (%):
-                <input type="number" id="confidence-threshold" placeholder="e.g., 90" min="0" max="100">
-            </label>
+            <label for="confidence-threshold">Min Confidence (%):</label>
+            <input type="number" id="confidence-threshold" placeholder="e.g., 90" min="0" max="100" aria-label="Minimum Confidence Threshold">
         </div>
         <div>
-            <label>Min Relevance (0-1):
-                <input type="number" id="relevance-threshold" placeholder="e.g., 0.5" step="0.01" min="0" max="1">
-            </label>
+            <label for="relevance-threshold">Min Relevance (0-1):</label>
+            <input type="number" id="relevance-threshold" placeholder="e.g., 0.5" step="0.01" min="0" max="1" aria-label="Minimum Relevance Threshold">
         </div>
         <div>
             <label>
-                <input type="checkbox" id="enable-date-range"> Enable Date Range
+                <input type="checkbox" id="enable-date-range" aria-label="Enable Date Range"> Enable Date Range
             </label>
         </div>
         <div id="date-range-inputs" style="display: none;">
-            <input type="date" id="start-date" placeholder="Start Date">
-            <input type="date" id="end-date" placeholder="End Date">
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date" placeholder="Start Date" aria-label="Start Date">
+            <label for="end-date">End Date:</label>
+            <input type="date" id="end-date" placeholder="End Date" aria-label="End Date">
         </div>
         <button type="submit">Search</button>
     </form>
 
-    <!-- Upload Section -->
     <div class="upload-section">
         <h3>Upload a Document</h3>
-        <form id="upload-form">
-            <input type="file" id="file" name="file" required>
+        <form id="upload-form" aria-label="Upload Form">
+            <input type="file" id="file" name="file" required aria-required="true" aria-label="File Input">
             <button type="submit">Upload</button>
         </form>
-        <div id="upload-message"></div>
+        <div id="upload-message" role="alert" aria-live="polite"></div>
+    </div>
+
+    <div id="loading-indicator" style="display:none;">Loading...</div>
+
+    <div class="llm-response" id="llm-response" style="display: none;">
+        <h3>AI Assistant Summary</h3>
+        <div id="llm-content"></div>
     </div>
 
     <div id="results">
-        <h2>Results</h2>
+        <h2>Search Results</h2>
         <div id="results-container"></div>
-        <div class="pagination" id="pagination"></div>
     </div>
 
-    <script>
-        const resultsPerPage = 5;
-        let currentPage = 1;
-        let currentResults = [];
-
-        function displayResults(results) {
-            const resultsContainer = document.getElementById('results-container');
-            const paginationContainer = document.getElementById('pagination');
-            resultsContainer.innerHTML = '';
-            paginationContainer.innerHTML = '';
-
-            if (results.length === 0) {
-                resultsContainer.innerHTML = '<p>No results found.</p>';
-                return;
-            }
-
-            const startIndex = (currentPage - 1) * resultsPerPage;
-            const endIndex = startIndex + resultsPerPage;
-            const pageResults = results.slice(startIndex, endIndex);
-
-            pageResults.forEach(result => {
-                const div = document.createElement('div');
-                div.classList.add('result');
-                div.innerHTML = `
-                    <h4>${result.title}</h4>
-                    <p><strong>Author:</strong> ${result.author}</p>
-                    <p><strong>Document ID:</strong> ${result.document_id}</p>
-                    <p><strong>Confidence:</strong> ${result.confidence}</p>
-                    <p><strong>Relevance:</strong> ${result.relevance}</p>
-                    <p><strong>Matching Passages:</strong></p>
-                    <ul>
-                        ${result.passages.map(passage => `<li>${passage}</li>`).join('')}
-                    </ul>
-                `;
-                resultsContainer.appendChild(div);
-            });
-
-            const totalPages = Math.ceil(results.length / resultsPerPage);
-            for (let i = 1; i <= totalPages; i++) {
-                const button = document.createElement('button');
-                button.textContent = i;
-                button.disabled = i === currentPage;
-                button.addEventListener('click', () => {
-                    currentPage = i;
-                    displayResults(currentResults);
-                });
-                paginationContainer.appendChild(button);
-            }
-        }
-
-        document.getElementById('query-form').addEventListener('submit', async function (event) {
-            event.preventDefault();
-            const query = document.getElementById('query').value;
-            const confidenceThreshold = document.getElementById('confidence-threshold').value || 0;
-            const relevanceThreshold = document.getElementById('relevance-threshold').value || 0;
-            const startDate = document.getElementById('start-date').value;
-            const endDate = document.getElementById('end-date').value;
-
-            try {
-                const response = await fetch('/query', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                    query,
-                    confidence_threshold: confidenceThreshold,
-                    relevance_threshold: relevanceThreshold,
-                    start_date: startDate,
-                    end_date: endDate
-                })
-         });
-
-        const data = await response.json();
-
-        // Check if the response contains results
-        if (data.results) {
-            currentResults = data.results; // Store the results
-            currentPage = 1;
-            displayResults(currentResults);
-        } else {
-            document.getElementById('results-container').innerHTML = '<p class="error">No results found.</p>';
-        }
-    } catch (error) {
-        document.getElementById('results-container').innerHTML = `<p class="error">Error: ${error.message}</p>`;
-    }
-});
-
-        document.getElementById('enable-date-range').addEventListener('change', function () {
-            document.getElementById('date-range-inputs').style.display = this.checked ? 'block' : 'none';
-        });
-
-        document.getElementById('upload-form').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const fileInput = document.getElementById('file');
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-
-            try {
-                const response = await fetch('/upload', {
-                    method: 'POST',
-                    body: formData
-                });
-                const data = await response.json();
-                document.getElementById('upload-message').innerText = data.message || data.error;
-            } catch (error) {
-                document.getElementById('upload-message').innerText = `An error occurred: ${error.message}`;
-            }
-        });
-    </script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
-

@@ -14,6 +14,9 @@ venv/
 # Environment variables
 # Ignore all .env files
 *.env
+# Specific Ignore environment files
+ibm-credentials.env
+openai.env
 
 # IDE settings
 .idea/
