@@ -7,7 +7,7 @@ from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
 from config import UPLOAD_FOLDER
 
-app = Flask(__name__, template_folder='templates', static_folder='public')  # <--- Note static_folder='public'
+app = Flask(__name__, template_folder='templates', static_folder='public')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -46,7 +46,8 @@ def upload_file():
 def query_endpoint():
     """
     Query IBM Discovery for documents relevant to the user's query,
-    filter them by confidence and relevance, and then generate a summary via OpenAI.
+    filter them by confidence and relevance thresholds, and then generate a summary via OpenAI.
+    Return all documents that meet min requirements for display in a table.
     """
     try:
         data = request.get_json()
@@ -91,19 +92,27 @@ def query_endpoint():
             if relevance_threshold > 0 and not any(s['relevance_score'] >= relevance_threshold for s in scores):
                 continue
 
+            # Include all passages that meet or exceed relevance threshold
             relevant_passages = [s['passage'] for s in scores if s['relevance_score'] >= relevance_threshold]
 
+            # If no relevant passages after filtering, skip the doc
+            if not relevant_passages:
+                continue
+
+            # Document passes the filters, so add it
+            top_relevance = max(s['relevance_score'] for s in scores if s['relevance_score'] >= relevance_threshold)
             formatted_results.append({
                 "document_id": result.get("document_id"),
                 "author": metadata.get("author", "Unknown"),
                 "title": metadata.get("title", metadata.get("filename", "No Title")),
                 "confidence": f"{confidence_value:.2f}%",
-                "relevance": f"{scores[0]['relevance_score']:.2f}" if scores else "0.00",
+                "relevance": f"{top_relevance:.2f}",
                 "passages": relevant_passages
             })
 
         answer = ""
         if formatted_results:
+            # Generate answer from all documents that meet criteria
             answer = generate_answer(query, formatted_results)
 
         # Log the query and answer
@@ -115,7 +124,8 @@ def query_endpoint():
         return jsonify({
             "query": query,
             "answer": answer,
-            "relevant_documents": formatted_results
+            "relevant_documents": formatted_results,
+            "search_history": search_history
         }), 200
 
     except ValueError as ve:
@@ -127,4 +137,6 @@ def query_endpoint():
 
 if __name__ == '__main__':
     logger.info("Starting Flask Application")
-    app.run(debug=True)
+    # Run only on localhost (127.0.0.1) and port 8080
+    app.run(host='127.0.0.1', port=8080, debug=True)
+
