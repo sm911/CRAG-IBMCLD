@@ -1,3 +1,55 @@
+// Define the function at the global scope
+function cleanAndFormatText(text) {
+    // Remove markdown formatting
+    text = text.replace(/\*\*AI Assistant Summary\*\*/g, '');
+    text = text.replace(/\*\*/g, '');
+
+    // Process text line by line
+    const lines = text.split('\n');
+    let formattedLines = [];
+    let indentLevel = 0;
+
+    lines.forEach(line => {
+        line = line.trim();
+        if (!line) return;
+
+        // Handle section headers
+        if (line.startsWith('OVERVIEW') || line.startsWith('DETAILS') || line.startsWith('CONCLUSION')) {
+            formattedLines.push('\n' + line + '\n');
+            indentLevel = 0;
+            return;
+        }
+
+        // Check for main topics
+        if (line.includes(': -') || line.endsWith(':')) {
+            indentLevel = 0;
+            formattedLines.push('\n' + line);
+            indentLevel++;
+            return;
+        }
+
+        // Handle bullet points
+        if (line.startsWith('-')) {
+            let content = line.substring(1).trim();
+            // Add proper indentation
+            let indent = '    '.repeat(indentLevel);
+            formattedLines.push(indent + '• ' + content);
+            return;
+        }
+
+        // Regular text
+        formattedLines.push(line);
+    });
+
+    // Join lines and add proper spacing
+    let formattedText = formattedLines.join('\n');
+
+    // Clean up excessive newlines
+    formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
+
+    return formattedText;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded - Initializing script...');
 
@@ -30,6 +82,21 @@ document.addEventListener('DOMContentLoaded', () => {
         llmContent,
         docsTable,
         docsTableBody
+    });
+
+    // Date range toggle handler
+    enableDateRange.addEventListener('change', () => {
+        dateRangeInputs.style.display = enableDateRange.checked ? 'block' : 'none';
+    });
+
+    // Query history dropdown handler
+    queryHistoryDropdown.addEventListener('change', () => {
+        const selectedQuery = queryHistoryDropdown.value;
+        if (selectedQuery) {
+            queryInput.value = selectedQuery;
+            queryInput.style.height = 'auto';
+            queryInput.style.height = queryInput.scrollHeight + 'px';
+        }
     });
 
     // Form submit handler
@@ -130,5 +197,56 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Keep your existing cleanAndFormatText function and other event handlers...
+    // Upload form handling
+    const uploadForm = document.getElementById('upload-form');
+    const uploadMessage = document.getElementById('upload-message');
+
+    uploadForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const fileInput = document.getElementById('file');
+        if (!fileInput.files.length) {
+            uploadMessage.textContent = "Please select a file.";
+            return;
+        }
+
+        loadingIndicator.style.display = 'flex';
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        try {
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            loadingIndicator.style.display = 'none';
+
+            const data = await response.json();
+            if (response.ok) {
+                uploadMessage.textContent = data.message;
+            } else {
+                uploadMessage.textContent = `Error: ${data.error}`;
+            }
+        } catch (error) {
+            loadingIndicator.style.display = 'none';
+            uploadMessage.textContent = `Unexpected error: ${error}`;
+        }
+    });
+
+    function updateQueryHistory(history) {
+        // Clear existing options except the first "Select..." option
+        for (let i = queryHistoryDropdown.options.length - 1; i > 0; i--) {
+            queryHistoryDropdown.remove(i);
+        }
+
+        // Add past queries as options to the dropdown
+        history.forEach(entry => {
+            const option = document.createElement('option');
+            option.value = entry.query;
+            option.textContent = entry.query;
+            queryHistoryDropdown.appendChild(option);
+        });
+    }
 });
