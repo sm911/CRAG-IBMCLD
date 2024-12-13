@@ -200,3 +200,52 @@ th {
     color: #2c3e50;
     font-weight: bold;
 }
+/* Add these to your existing CSS */
+
+/* Improve loading indicator */
+#loading-indicator {
+    /* Keep existing styles */
+    font-size: 1.2rem;
+    color: #2c3e50;
+    margin: 20px;
+    /* Add these new styles */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 1000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Ensure proper layering */
+.llm-response {
+    position: relative;
+    z-index: 1;
+}
+
+/* Enhance dropdown styles */
+#query-history-dropdown {
+    width: 100%;
+    max-width: 800px;
+    padding: 8px;
+    margin-bottom: 15px;
+    border: 2px solid #34495e;
+    border-radius: 5px;
+    background-color: white;
+    color: #2c3e50;
+}
+
+/* Style for error messages */
+.error {
+    color: #e74c3c;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #fdf0ef;
+    border: 1px solid #e74c3c;
+    margin: 10px 0;
+    font-weight: bold;
+}

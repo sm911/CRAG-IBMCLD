@@ -1,10 +1,9 @@
 // Define the function at the global scope
 function cleanAndFormatText(text) {
-    // Remove markdown formatting
+    // Existing cleanAndFormatText function remains unchanged
     text = text.replace(/\*\*AI Assistant Summary\*\*/g, '');
     text = text.replace(/\*\*/g, '');
 
-    // Process text line by line
     const lines = text.split('\n');
     let formattedLines = [];
     let indentLevel = 0;
@@ -13,14 +12,12 @@ function cleanAndFormatText(text) {
         line = line.trim();
         if (!line) return;
 
-        // Handle section headers
         if (line.startsWith('OVERVIEW') || line.startsWith('DETAILS') || line.startsWith('CONCLUSION')) {
             formattedLines.push('\n' + line + '\n');
             indentLevel = 0;
             return;
         }
 
-        // Check for main topics
         if (line.includes(': -') || line.endsWith(':')) {
             indentLevel = 0;
             formattedLines.push('\n' + line);
@@ -28,35 +25,26 @@ function cleanAndFormatText(text) {
             return;
         }
 
-        // Handle bullet points
         if (line.startsWith('-')) {
             let content = line.substring(1).trim();
-            // Add proper indentation
             let indent = '    '.repeat(indentLevel);
             formattedLines.push(indent + '• ' + content);
             return;
         }
 
-        // Regular text
         formattedLines.push(line);
     });
 
-    // Join lines and add proper spacing
     let formattedText = formattedLines.join('\n');
-
-    // Clean up excessive newlines
     formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
-
     return formattedText;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded - Initializing script...');
 
-    // Get all form elements
+    // Get all form elements (keeping existing declarations)
     const queryForm = document.getElementById('query-form');
-    console.log('Query form found:', queryForm);
-
     const queryInput = document.getElementById('query');
     const confidenceInput = document.getElementById('confidence-threshold');
     const relevanceInput = document.getElementById('relevance-threshold');
@@ -70,61 +58,77 @@ document.addEventListener('DOMContentLoaded', () => {
     const docsTableBody = document.getElementById('docs-table-body');
     const queryHistoryDropdown = document.getElementById('query-history-dropdown');
 
-    // Verify all elements are found
-    console.log('All form elements found:', {
-        queryInput,
-        confidenceInput,
-        relevanceInput,
-        enableDateRange,
-        dateRangeInputs,
-        loadingIndicator,
-        llmResponse,
-        llmContent,
-        docsTable,
-        docsTableBody
-    });
+    // Enhanced query history handling
+    function updateQueryHistory(history) {
+        while (queryHistoryDropdown.options.length > 1) {
+            queryHistoryDropdown.remove(1);
+        }
 
-    // Date range toggle handler
+        if (history && history.length > 0) {
+            history.forEach(entry => {
+                const option = document.createElement('option');
+                option.value = entry.query;
+                option.textContent = entry.query;
+                queryHistoryDropdown.appendChild(option);
+            });
+        }
+    }
+
+    // Clear form function
+    function clearForm() {
+        queryInput.value = '';
+        confidenceInput.value = '';
+        relevanceInput.value = '';
+        if (enableDateRange.checked) {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            enableDateRange.checked = false;
+            dateRangeInputs.style.display = 'none';
+        }
+    }
+
+    // Clear results function
+    function clearResults() {
+        llmResponse.style.display = 'none';
+        docsTable.style.display = 'none';
+        resultsContainer.innerHTML = "";
+        llmContent.innerHTML = "";
+    }
+
+    // Keep existing event listeners
     enableDateRange.addEventListener('change', () => {
         dateRangeInputs.style.display = enableDateRange.checked ? 'block' : 'none';
     });
 
-    // Query history dropdown handler
+    // Enhanced query history dropdown handler
     queryHistoryDropdown.addEventListener('change', () => {
         const selectedQuery = queryHistoryDropdown.value;
         if (selectedQuery) {
             queryInput.value = selectedQuery;
             queryInput.style.height = 'auto';
             queryInput.style.height = queryInput.scrollHeight + 'px';
+            // Optional: Auto-submit when selecting from history
+            // queryForm.dispatchEvent(new Event('submit'));
         }
     });
 
-    // Form submit handler
+    // Enhanced form submit handler
     queryForm.addEventListener('submit', async (e) => {
-        console.log('Form submission started');
         e.preventDefault();
-        console.log('Default form submission prevented');
+        console.log('Form submission started');
+
+        // Clear old results immediately
+        clearResults();
 
         // Show loading indicator
         loadingIndicator.style.display = 'flex';
-        console.log('Loading indicator shown');
 
-        // Get form values
         const queryValue = queryInput.value.trim();
         const confidenceValue = confidenceInput.value.trim();
         const relevanceValue = relevanceInput.value.trim();
         const startDate = document.getElementById('start-date').value;
         const endDate = document.getElementById('end-date').value;
 
-        console.log('Form values collected:', {
-            query: queryValue,
-            confidence: confidenceValue,
-            relevance: relevanceValue,
-            startDate,
-            endDate
-        });
-
-        // Prepare payload
         const payload = { query: queryValue };
         if (confidenceValue) payload.confidence_threshold = confidenceValue;
         if (relevanceValue) payload.relevance_threshold = relevanceValue;
@@ -133,19 +137,13 @@ document.addEventListener('DOMContentLoaded', () => {
             if (endDate) payload.end_date = endDate;
         }
 
-        console.log('Sending payload to server:', payload);
-
         try {
-            console.log('Making fetch request to /query');
             const response = await fetch('/query', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            console.log('Response received:', response);
             loadingIndicator.style.display = 'none';
 
             if (!response.ok) {
@@ -154,21 +152,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            console.log('Data received from server:', data);
-
-            // Clear previous results
-            resultsContainer.innerHTML = "";
 
             if (data.answer) {
                 llmContent.innerHTML = cleanAndFormatText(data.answer);
                 llmResponse.style.display = 'block';
-                console.log('Answer displayed');
-            } else {
-                llmResponse.style.display = 'none';
-                console.log('No answer received');
             }
 
-            // Update documents table
             if (data.relevant_documents?.length > 0) {
                 docsTableBody.innerHTML = "";
                 data.relevant_documents.forEach(doc => {
@@ -182,22 +171,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     docsTableBody.appendChild(row);
                 });
                 docsTable.style.display = 'table';
-                console.log('Documents table updated');
-            } else {
-                docsTable.style.display = 'none';
-                console.log('No relevant documents');
             }
+
+            // Update query history and clear form after successful response
+            if (data.search_history) {
+                updateQueryHistory(data.search_history);
+            }
+            clearForm();
 
         } catch (error) {
             console.error('Error during query:', error);
             loadingIndicator.style.display = 'none';
             resultsContainer.innerHTML = `<p class="error">Error: ${error.message}</p>`;
-            llmResponse.style.display = 'none';
-            docsTable.style.display = 'none';
         }
     });
 
-    // Upload form handling
+    // Keep existing upload form handling
     const uploadForm = document.getElementById('upload-form');
     const uploadMessage = document.getElementById('upload-message');
 
@@ -234,19 +223,4 @@ document.addEventListener('DOMContentLoaded', () => {
             uploadMessage.textContent = `Unexpected error: ${error}`;
         }
     });
-
-    function updateQueryHistory(history) {
-        // Clear existing options except the first "Select..." option
-        for (let i = queryHistoryDropdown.options.length - 1; i > 0; i--) {
-            queryHistoryDropdown.remove(i);
-        }
-
-        // Add past queries as options to the dropdown
-        history.forEach(entry => {
-            const option = document.createElement('option');
-            option.value = entry.query;
-            option.textContent = entry.query;
-            queryHistoryDropdown.appendChild(option);
-        });
-    }
 });
