@@ -7,7 +7,7 @@ from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
 from config import UPLOAD_FOLDER
 
-app = Flask(__name__, template_folder='templates', static_folder='public')
+app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)

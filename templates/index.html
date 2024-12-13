@@ -4,8 +4,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Corrective RAG (CRAG) Prototype</title>
-    <!-- Add marked.js before other scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.3.0/marked.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <style>
         #query {
@@ -32,38 +30,24 @@
             border: 1px solid #ccc;
             padding: 8px;
         }
-        /* Add styles for markdown content */
+        /* Updated styles for plain text formatting */
         #llm-content {
+            font-family: Arial, sans-serif;
             line-height: 1.6;
-        }
-        #llm-content h1,
-        #llm-content h2,
-        #llm-content h3,
-        #llm-content h4,
-        #llm-content h5,
-        #llm-content h6 {
-            margin-top: 1em;
-            margin-bottom: 0.5em;
-        }
-        #llm-content ul,
-        #llm-content ol {
-            padding-left: 2em;
-            margin: 1em 0;
-        }
-        #llm-content li {
-            margin: 0.5em 0;
-        }
-        #llm-content p {
-            margin: 1em 0;
-        }
-        #llm-content strong {
             color: #2c3e50;
+            white-space: pre-wrap;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        #llm-content section {
+            margin: 1.5em 0;
         }
     </style>
 </head>
 <body>
     <h1>Corrective RAG (CRAG) Prototype</h1>
-    <!-- Dropdown to select a past query -->
     <div>
         <label for="query-history-dropdown">Past Queries:</label>
         <select id="query-history-dropdown">
@@ -107,7 +91,7 @@
     <div id="loading-indicator">Loading...</div>
 
     <div class="llm-response" id="llm-response" style="display: none;">
-        <h3>AI Assistant Summary</h3>
+        <h3>AI Assistant Response</h3>
         <div id="llm-content"></div>
         <h3>Documents Used</h3>
         <table id="docs-table" style="display:none;">
@@ -128,7 +112,6 @@
         <div id="results-container"></div>
     </div>
 
-    <!-- Scripts at the bottom for better page loading -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
     <script>
         const queryTextarea = document.getElementById('query');
