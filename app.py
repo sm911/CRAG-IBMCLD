@@ -2,7 +2,8 @@ import os
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 from services.ibm_services import add_document_to_discovery, query_discovery, get_nlu_client, calculate_relevance
-from services.openai_service import generate_answer
+#from services.openai_service import generate_answer
+from services.watsonxai_service import generate_answer
 from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
 from config import UPLOAD_FOLDER
