@@ -140,4 +140,3 @@ if __name__ == '__main__':
     logger.info("Starting Flask Application")
     # Run only on localhost (127.0.0.1) and port 8080
     app.run(host='127.0.0.1', port=8080, debug=True)
-
