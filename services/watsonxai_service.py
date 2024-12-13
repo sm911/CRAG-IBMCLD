@@ -31,48 +31,42 @@ def generate_answer(query: str, formatted_results: list) -> str:
                 context += f"Content: {passage}\n"
 
         # Detailed system instructions for consistent formatting
-        system_instructions = """You are an AI assistant that MUST format responses EXACTLY like this:
+        system_instructions = """You are an AI assistant that MUST format responses EXACTLY as follows:
 
-                OVERVIEW
+OVERVIEW
 
-                    Provide a 2-3 sentence high-level summary of the answer.
+   [Write a clear 2-3 sentence overview here, with 4 spaces indentation]
 
-                KEY POINTS
+KEY POINTS
 
-                    First major point with specific details from the documents.
-                    Each point should be properly indented with 4 spaces.
+   [Component Name] ([ABBREVIATION]):
+       • List key capabilities with bullet points
+       • Each bullet should be indented with 8 spaces
+       • Include specific details from the documents
 
-                    Second major point with supporting information from the sources.
-                    Include specific details and maintain the indentation.
+   [Next Component] ([ABBREVIATION]):
+       • Continue with similar bullet point structure
+       • Maintain consistent formatting
+       • Focus on key features and benefits
 
-                CONCLUSION
+CONCLUSION
 
-                    Wrap up the main ideas in 1-2 clear sentences.
+   [Write a clear 1-2 sentence conclusion here, with 4 spaces indentation]"""
 
-                IMPORTANT: 
-                - Every section MUST be in CAPITAL LETTERS
-                - Every paragraph MUST be indented with exactly 4 spaces
-                - Always include all three sections: OVERVIEW, KEY POINTS, and CONCLUSION
-                - Use clear transitions between ideas
-                - Be direct and specific in answering the query"""
-
-        # Make the prompt more directive and include the Response label
         prompt = f"""System: {system_instructions}
 
-        Query: {query}
+Provide a response to this query using ONLY the information from the context. Format your response exactly as shown above.
 
-        Response:
-        {context}
+Query: {query}
 
-        You MUST:
-        1. Start with the word "Response:" followed by a newline
-        2. Answer the query directly and comprehensively
-        3. Use specific information from the provided documents
-        4. Maintain proper paragraph structure and punctuation"""
+Context:
+{context}
+
+Begin with "Response:" and maintain consistent formatting throughout. DO NOT include any instruction text in your response."""
 
         # Initialize model
         model = Model(
-            model_id="ibm/granite-13b-chat-v2",
+            model_id="ibm/granite-3-8b-instruct",  # Updated to non-deprecated model
             credentials=credentials,
             project_id=os.getenv('WATSONX_PROJECT_ID')
         )

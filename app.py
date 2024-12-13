@@ -3,7 +3,7 @@ from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 from services.ibm_services import add_document_to_discovery, query_discovery, get_nlu_client, calculate_relevance
 #from services.openai_service import generate_answer
-from services.watsonxai_service import generate_answer
+from services.watsonxai_service import generate_answer # New watsonx.ai implementation
 from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
 from config import UPLOAD_FOLDER
@@ -138,5 +138,11 @@ def query_endpoint():
 
 if __name__ == '__main__':
     logger.info("Starting Flask Application")
-    # Run only on localhost (127.0.0.1) and port 8080
-    app.run(host='127.0.0.1', port=8080, debug=True)
+    # Get port from environment variable or default to 8080
+    port = int(os.environ.get('PORT', 8080))
+    # If running locally (not in Code Engine)
+    if os.environ.get('K_SERVICE') is None:
+        app.run(host='127.0.0.1', port=port, debug=True)
+    else:
+        # In Code Engine, let gunicorn handle it
+        app.run(host='0.0.0.0', port=port, debug=False)
