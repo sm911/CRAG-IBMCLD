@@ -1,15 +1,11 @@
-import os
-from dotenv import load_dotenv
 from ibm_watson_machine_learning.foundation_models import Model
 from ibm_watson_machine_learning.foundation_models.utils.enums import ModelTypes
-
-# Load environment variables
-load_dotenv('ibm-credentials.env')
+from config import WATSONX_API_KEY, WATSONX_PROJECT_ID, WATSONX_URL
 
 # Initialize credentials
 credentials = {
-    "url": os.getenv('WATSONX_URL'),
-    "apikey": os.getenv('WATSONX_API_KEY')
+    "url": WATSONX_URL,
+    "apikey": WATSONX_API_KEY
 }
 
 
@@ -68,7 +64,7 @@ Begin with "Response:" and maintain consistent formatting throughout. DO NOT inc
         model = Model(
             model_id="ibm/granite-3-8b-instruct",  # Updated to non-deprecated model
             credentials=credentials,
-            project_id=os.getenv('WATSONX_PROJECT_ID')
+            project_id=WATSONX_PROJECT_ID
         )
 
         # Generate response with parameters

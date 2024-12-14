@@ -2,8 +2,8 @@ import os
 from flask import Flask, request, jsonify, render_template
 from werkzeug.utils import secure_filename
 from services.ibm_services import add_document_to_discovery, query_discovery, get_nlu_client, calculate_relevance
-#from services.openai_service import generate_answer
-from services.watsonxai_service import generate_answer # New watsonx.ai implementation
+# from services.openai_service import generate_answer  # Original OpenAI implementation
+from services.watsonxai_service import generate_answer  # New watsonx.ai implementation
 from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
 from config import UPLOAD_FOLDER
@@ -15,10 +15,12 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 search_history = []
 
+
 @app.route('/')
 def home():
     """Render the home page template."""
     return render_template('index.html')
+
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
@@ -43,12 +45,20 @@ def upload_file():
 
     return jsonify({'error': 'File type not allowed'}), 400
 
+
 @app.route('/query', methods=['POST'])
 def query_endpoint():
     """
     Query IBM Discovery for documents relevant to the user's query,
-    filter them by confidence and relevance thresholds, and then generate a summary via OpenAI.
-    Return all documents that meet min requirements for display in a table.
+    filter them by confidence and relevance thresholds, and generate a summary using IBM watsonx.ai.
+    Return all documents that meet minimum requirements for display in a table.
+
+    The process:
+    1. Query IBM Discovery for relevant documents
+    2. Use NLU to calculate relevance scores
+    3. Filter results based on confidence and relevance thresholds
+    4. Generate comprehensive answer using watsonx.ai foundation model
+    5. Return query results and generated answer
     """
     try:
         data = request.get_json()
@@ -113,7 +123,7 @@ def query_endpoint():
 
         answer = ""
         if formatted_results:
-            # Generate answer from all documents that meet criteria
+            # Generate answer using watsonx.ai foundation model
             answer = generate_answer(query, formatted_results)
 
         # Log the query and answer
@@ -135,6 +145,7 @@ def query_endpoint():
     except Exception as e:
         logger.error(f"Exception occurred: {str(e)}")
         return jsonify({'error': f"An error occurred: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     logger.info("Starting Flask Application")
