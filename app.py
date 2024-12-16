@@ -6,7 +6,7 @@ from services.ibm_services import add_document_to_discovery, query_discovery, ge
 from services.watsonxai_service import generate_answer  # New watsonx.ai implementation
 from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
-from config import UPLOAD_FOLDER, APP_PASSPHRASE
+from config import UPLOAD_FOLDER, APP_PASSPHRASE_HASH
 from functools import wraps
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
