@@ -44,72 +44,100 @@
         #llm-content section {
             margin: 1.5em 0;
         }
+        #auth-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .error-message {
+            color: #dc3545;
+            margin-top: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <h1>Corrective RAG (CRAG) Prototype</h1>
-    <div>
-        <label for="query-history-dropdown">Past Queries:</label>
-        <select id="query-history-dropdown">
-            <option value="">Select a past query...</option>
-        </select>
+
+    <!-- Authentication Section -->
+    <div id="auth-section">
+        <h3>Authentication Required</h3>
+        <div class="form-group">
+            <input type="password" id="passphrase" placeholder="Enter access code" class="form-control">
+            <small class="form-text text-muted">Please enter the access code to use this application.</small>
+            <div id="auth-error" class="error-message"></div>
+        </div>
     </div>
 
-    <form id="query-form" aria-label="Query Form" style="margin-top:10px;">
-        <textarea id="query" placeholder="Enter your query" required aria-required="true" aria-label="Query Input"></textarea>
+    <!-- Main Application Content - Initially Hidden -->
+    <div id="app-content" style="display: none;">
         <div>
-            <label for="confidence-threshold">Min Confidence (%):</label>
-            <input type="number" id="confidence-threshold" placeholder="e.g., 90" min="0" max="100" aria-label="Minimum Confidence Threshold">
+            <label for="query-history-dropdown">Past Queries:</label>
+            <select id="query-history-dropdown">
+                <option value="">Select a past query...</option>
+            </select>
         </div>
-        <div>
-            <label for="relevance-threshold">Min Relevance (0-1):</label>
-            <input type="number" id="relevance-threshold" placeholder="e.g., 0.5" step="0.01" min="0" max="1" aria-label="Minimum Relevance Threshold">
-        </div>
-        <div>
-            <label>
-                <input type="checkbox" id="enable-date-range" aria-label="Enable Date Range"> Enable Date Range
-            </label>
-        </div>
-        <div id="date-range-inputs" style="display: none;">
-            <label for="start-date">Start Date:</label>
-            <input type="date" id="start-date" placeholder="Start Date" aria-label="Start Date">
-            <label for="end-date">End Date:</label>
-            <input type="date" id="end-date" placeholder="End Date" aria-label="End Date">
-        </div>
-        <button type="submit">Search</button>
-    </form>
 
-    <div class="upload-section">
-        <h3>Upload a Document</h3>
-        <form id="upload-form" aria-label="Upload Form">
-            <input type="file" id="file" name="file" required aria-required="true" aria-label="File Input">
-            <button type="submit">Upload</button>
+        <form id="query-form" aria-label="Query Form" style="margin-top:10px;">
+            <textarea id="query" placeholder="Enter your query" required aria-required="true" aria-label="Query Input"></textarea>
+            <div>
+                <label for="confidence-threshold">Min Confidence (%):</label>
+                <input type="number" id="confidence-threshold" placeholder="e.g., 90" min="0" max="100" aria-label="Minimum Confidence Threshold">
+            </div>
+            <div>
+                <label for="relevance-threshold">Min Relevance (0-1):</label>
+                <input type="number" id="relevance-threshold" placeholder="e.g., 0.5" step="0.01" min="0" max="1" aria-label="Minimum Relevance Threshold">
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="enable-date-range" aria-label="Enable Date Range"> Enable Date Range
+                </label>
+            </div>
+            <div id="date-range-inputs" style="display: none;">
+                <label for="start-date">Start Date:</label>
+                <input type="date" id="start-date" placeholder="Start Date" aria-label="Start Date">
+                <label for="end-date">End Date:</label>
+                <input type="date" id="end-date" placeholder="End Date" aria-label="End Date">
+            </div>
+            <button type="submit">Search</button>
         </form>
-        <div id="upload-message" role="alert" aria-live="polite"></div>
-    </div>
 
-    <div id="loading-indicator">Loading...</div>
+        <div class="upload-section">
+            <h3>Upload a Document</h3>
+            <form id="upload-form" aria-label="Upload Form">
+                <input type="file" id="file" name="file" required aria-required="true" aria-label="File Input">
+                <button type="submit">Upload</button>
+            </form>
+            <div id="upload-message" role="alert" aria-live="polite"></div>
+        </div>
 
-    <div class="llm-response" id="llm-response" style="display: none;">
-        <h3>AI Assistant Response</h3>
-        <div id="llm-content"></div>
-        <h3>Documents Used</h3>
-        <table id="docs-table" style="display:none;">
-            <thead>
-                <tr>
-                    <th>Title</th>
-                    <th>Author</th>
-                    <th>Confidence</th>
-                    <th>Relevance</th>
-                </tr>
-            </thead>
-            <tbody id="docs-table-body"></tbody>
-        </table>
-    </div>
+        <div id="loading-indicator">
+            <span id="loading-text">Processing...</span>
+        </div>
 
-    <div id="results">
-        <h2>Search Results</h2>
-        <div id="results-container"></div>
+        <div class="llm-response" id="llm-response" style="display: none;">
+            <h3>AI Assistant Response</h3>
+            <div id="llm-content"></div>
+            <h3>Documents Used</h3>
+            <table id="docs-table" style="display:none;">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Confidence</th>
+                        <th>Relevance</th>
+                    </tr>
+                </thead>
+                <tbody id="docs-table-body"></tbody>
+            </table>
+        </div>
+
+        <div id="results">
+            <h2>Search Results</h2>
+            <div id="results-container"></div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='script.js') }}"></script>

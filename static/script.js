@@ -1,49 +1,7 @@
-// Define the function at the global scope
-function cleanAndFormatText(text) {
-    // Existing cleanAndFormatText function remains unchanged
-    text = text.replace(/\*\*AI Assistant Summary\*\*/g, '');
-    text = text.replace(/\*\*/g, '');
-
-    const lines = text.split('\n');
-    let formattedLines = [];
-    let indentLevel = 0;
-
-    lines.forEach(line => {
-        line = line.trim();
-        if (!line) return;
-
-        if (line.startsWith('OVERVIEW') || line.startsWith('DETAILS') || line.startsWith('CONCLUSION')) {
-            formattedLines.push('\n' + line + '\n');
-            indentLevel = 0;
-            return;
-        }
-
-        if (line.includes(': -') || line.endsWith(':')) {
-            indentLevel = 0;
-            formattedLines.push('\n' + line);
-            indentLevel++;
-            return;
-        }
-
-        if (line.startsWith('-')) {
-            let content = line.substring(1).trim();
-            let indent = '    '.repeat(indentLevel);
-            formattedLines.push(indent + '• ' + content);
-            return;
-        }
-
-        formattedLines.push(line);
-    });
-
-    let formattedText = formattedLines.join('\n');
-    formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
-    return formattedText;
-}
-
 document.addEventListener('DOMContentLoaded', () => {
     console.log('DOM Content Loaded - Initializing script...');
 
-    // Get all form elements (keeping existing declarations)
+    // Get all form elements
     const queryForm = document.getElementById('query-form');
     const queryInput = document.getElementById('query');
     const confidenceInput = document.getElementById('confidence-threshold');
@@ -57,6 +15,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const docsTable = document.getElementById('docs-table');
     const docsTableBody = document.getElementById('docs-table-body');
     const queryHistoryDropdown = document.getElementById('query-history-dropdown');
+    const authSection = document.getElementById('auth-section');
+    const appContent = document.getElementById('app-content');
+    const authError = document.getElementById('auth-error');
+    const passphraseInput = document.getElementById('passphrase');
+
+    // Loading indicator functions
+    function showLoading(message = 'Processing...') {
+        document.getElementById('loading-text').textContent = message;
+        loadingIndicator.style.display = 'flex';
+    }
+
+    function hideLoading() {
+        loadingIndicator.style.display = 'none';
+    }
+
+    // Authentication check function
+    async function checkAuth() {
+        const passphrase = passphraseInput.value;
+        if (!passphrase) {
+            authError.textContent = 'Please enter the access code.';
+            authError.style.display = 'block';
+            return false;
+        }
+        return passphrase;
+    }
 
     // Enhanced query history handling
     function updateQueryHistory(history) {
@@ -95,33 +78,28 @@ document.addEventListener('DOMContentLoaded', () => {
         llmContent.innerHTML = "";
     }
 
-    // Keep existing event listeners
+    // Event listeners
     enableDateRange.addEventListener('change', () => {
         dateRangeInputs.style.display = enableDateRange.checked ? 'block' : 'none';
     });
 
-    // Enhanced query history dropdown handler
     queryHistoryDropdown.addEventListener('change', () => {
         const selectedQuery = queryHistoryDropdown.value;
         if (selectedQuery) {
             queryInput.value = selectedQuery;
             queryInput.style.height = 'auto';
             queryInput.style.height = queryInput.scrollHeight + 'px';
-            // Optional: Auto-submit when selecting from history
-            // queryForm.dispatchEvent(new Event('submit'));
         }
     });
 
-    // Enhanced form submit handler
+    // Query form submit handler
     queryForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('Form submission started');
+        const passphrase = await checkAuth();
+        if (!passphrase) return;
 
-        // Clear old results immediately
         clearResults();
-
-        // Show loading indicator
-        loadingIndicator.style.display = 'flex';
+        showLoading('Processing query...');
 
         const queryValue = queryInput.value.trim();
         const confidenceValue = confidenceInput.value.trim();
@@ -140,11 +118,14 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/query', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-App-Passphrase': passphrase
+                },
                 body: JSON.stringify(payload)
             });
 
-            loadingIndicator.style.display = 'none';
+            hideLoading();
 
             if (!response.ok) {
                 const errorData = await response.json();
@@ -173,7 +154,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 docsTable.style.display = 'table';
             }
 
-            // Update query history and clear form after successful response
             if (data.search_history) {
                 updateQueryHistory(data.search_history);
             }
@@ -181,17 +161,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('Error during query:', error);
-            loadingIndicator.style.display = 'none';
+            hideLoading();
             resultsContainer.innerHTML = `<p class="error">Error: ${error.message}</p>`;
         }
     });
 
-    // Keep existing upload form handling
+    // Upload form handler
     const uploadForm = document.getElementById('upload-form');
     const uploadMessage = document.getElementById('upload-message');
 
     uploadForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const passphrase = await checkAuth();
+        if (!passphrase) return;
 
         const fileInput = document.getElementById('file');
         if (!fileInput.files.length) {
@@ -199,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        loadingIndicator.style.display = 'flex';
+        showLoading('Uploading document...');
 
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
@@ -207,20 +189,66 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch('/upload', {
                 method: 'POST',
+                headers: {
+                    'X-App-Passphrase': passphrase
+                },
                 body: formData
             });
 
-            loadingIndicator.style.display = 'none';
+            hideLoading();
 
             const data = await response.json();
             if (response.ok) {
                 uploadMessage.textContent = data.message;
+                uploadForm.reset();
             } else {
                 uploadMessage.textContent = `Error: ${data.error}`;
             }
         } catch (error) {
-            loadingIndicator.style.display = 'none';
+            hideLoading();
             uploadMessage.textContent = `Unexpected error: ${error}`;
         }
     });
+
+    // Clean and format text function
+    function cleanAndFormatText(text) {
+        text = text.replace(/\*\*AI Assistant Summary\*\*/g, '');
+        text = text.replace(/\*\*/g, '');
+
+        const lines = text.split('\n');
+        let formattedLines = [];
+        let indentLevel = 0;
+
+        lines.forEach(line => {
+            line = line.trim();
+            if (!line) return;
+
+            if (line.startsWith('OVERVIEW') || line.startsWith('DETAILS') ||
+                line.startsWith('CONCLUSION') || line.startsWith('KEY POINTS')) {
+                formattedLines.push('\n' + line + '\n');
+                indentLevel = 0;
+                return;
+            }
+
+            if (line.includes(': -') || line.endsWith(':')) {
+                indentLevel = 0;
+                formattedLines.push('\n' + line);
+                indentLevel++;
+                return;
+            }
+
+            if (line.startsWith('-')) {
+                let content = line.substring(1).trim();
+                let indent = '    '.repeat(indentLevel);
+                formattedLines.push(indent + '• ' + content);
+                return;
+            }
+
+            formattedLines.push(line);
+        });
+
+        let formattedText = formattedLines.join('\n');
+        formattedText = formattedText.replace(/\n{3,}/g, '\n\n');
+        return formattedText;
+    }
 });

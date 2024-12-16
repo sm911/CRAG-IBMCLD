@@ -6,7 +6,8 @@ from services.ibm_services import add_document_to_discovery, query_discovery, ge
 from services.watsonxai_service import generate_answer  # New watsonx.ai implementation
 from utils.validators import allowed_file, validate_thresholds, validate_dates
 from utils.logger import logger
-from config import UPLOAD_FOLDER
+from config import UPLOAD_FOLDER, APP_PASSPHRASE
+from functools import wraps
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -15,14 +16,22 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 search_history = []
 
+def requires_passphrase(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('X-App-Passphrase')
+        if not auth_header or auth_header != APP_PASSPHRASE:
+            return jsonify({'error': 'Access denied. Valid passphrase required.'}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 @app.route('/')
 def home():
     """Render the home page template."""
     return render_template('index.html')
 
-
 @app.route('/upload', methods=['POST'])
+@requires_passphrase
 def upload_file():
     """Upload and add a document to IBM Discovery."""
     if 'file' not in request.files:
@@ -45,8 +54,8 @@ def upload_file():
 
     return jsonify({'error': 'File type not allowed'}), 400
 
-
 @app.route('/query', methods=['POST'])
+@requires_passphrase
 def query_endpoint():
     """
     Query IBM Discovery for documents relevant to the user's query,
@@ -145,7 +154,6 @@ def query_endpoint():
     except Exception as e:
         logger.error(f"Exception occurred: {str(e)}")
         return jsonify({'error': f"An error occurred: {str(e)}"}), 500
-
 
 if __name__ == '__main__':
     logger.info("Starting Flask Application")
