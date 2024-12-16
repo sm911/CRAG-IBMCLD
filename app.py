@@ -20,7 +20,7 @@ def requires_passphrase(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         auth_header = request.headers.get('X-App-Passphrase')
-        if not auth_header or auth_header != APP_PASSPHRASE:
+        if not auth_header or auth_header != APP_PASSPHRASE_HASH:
             return jsonify({'error': 'Access denied. Valid passphrase required.'}), 401
         return f(*args, **kwargs)
     return decorated
