@@ -35,4 +35,4 @@ DISCOVERY_VERSION = '2021-08-01'
 NLU_VERSION = '2021-08-01'
 
 # Add this with your other env var validations
-APP_PASSPHRASE = get_env_var('DronesOverUSA')  # Store actual passphrase server-side
+APP_PASSPHRASE = get_env_var('APP_PASSPHRASE_HASH')  # Store actual passphrase server-side
