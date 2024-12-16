@@ -26,6 +26,9 @@ WATSONX_API_KEY = get_env_var('WATSONX_API_KEY')
 WATSONX_PROJECT_ID = get_env_var('WATSONX_PROJECT_ID')
 WATSONX_URL = get_env_var('WATSONX_URL')
 
+# Authorized Use PASS PHRASE
+APP_PASSPHRASE_HASH = get_env_var('APP_PASSPHRASE_HASH')  # Store actual passphrase server-side
+
 # Application settings
 UPLOAD_FOLDER = './uploads'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
@@ -34,5 +37,3 @@ ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx'}
 DISCOVERY_VERSION = '2021-08-01'
 NLU_VERSION = '2021-08-01'
 
-# Add this with your other env var validations
-APP_PASSPHRASE = get_env_var('APP_PASSPHRASE_HASH')  # Store actual passphrase server-side
